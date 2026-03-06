@@ -35,6 +35,19 @@ display:none;
 </head>
 
 <body>
+<h1>先生ページ</h1>
+
+<div id="loginArea">
+
+<h2>先生ログイン</h2>
+
+<input id="teacherPass" type="password" placeholder="パスワード">
+
+<button onclick="teacherLogin()">ログイン</button>
+
+</div>
+
+<div id="teacherArea" class="hidden">
 
 <h1>先生ページ</h1>
 
@@ -310,6 +323,23 @@ loadStudents();
 
 loadQuestions();
 
+window.teacherLogin=function(){
+
+const pass=document.getElementById("teacherPass").value;
+
+if(pass==="008769"){
+
+document.getElementById("loginArea").style.display="none";
+
+document.getElementById("teacherArea").classList.remove("hidden");
+
+}else{
+
+alert("パスワードが違います");
+
+}
+
+}
 </script>
 
 </body>
