@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>生徒ページ</title>
+
+<style>
+
+body{
+font-family:sans-serif;
+padding:10px;
+}
+
+input,button,select{
+padding:10px;
+font-size:16px;
+margin:4px 0;
+width:100%;
+max-width:300px;
+}
+
+.hidden{
+display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>生徒ログイン</h1>
+
+<select id="loginStudent"></select>
+
+<input id="loginPass" type="password">
+
+<button onclick="loginStudent()">ログイン</button>
+
+
+<div id="studentArea" class="hidden">
+
+<h2 id="welcome"></h2>
+
+<button onclick="startTest()">テスト開始</button>
+
+<h3>点数</h3>
+
+<p id="myScore"></p>
+
+<div id="testArea"></div>
+
+</div>
+
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+getDocs,
+doc,
+updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+
+const firebaseConfig = {
+
+apiKey: "YOUR_API_KEY",
+
+authDomain: "YOUR_PROJECT.firebaseapp.com",
+
+projectId: "YOUR_PROJECT",
+
+storageBucket: "YOUR_PROJECT.appspot.com",
+
+messagingSenderId: "XXXX",
+
+appId: "XXXX"
+
+};
+
+
+const app=initializeApp(firebaseConfig);
+
+const db=getFirestore(app);
+
+
+let students=[];
+
+let questions=[];
+
+let loginIndex=null;
+
+
+
+async function loadStudents(){
+
+const snap=await getDocs(collection(db,"students"));
+
+snap.forEach(d=>{
+
+students.push({
+
+id:d.id,
+
+...d.data()
+
+});
+
+});
+
+
+const select=document.getElementById("loginStudent");
+
+students.forEach((s,i)=>{
+
+const op=document.createElement("option");
+
+op.value=i;
+
+op.textContent=s.name;
+
+select.appendChild(op);
+
+});
+
+}
+
+
+async function loadQuestions(){
+
+const snap=await getDocs(collection(db,"questions"));
+
+snap.forEach(d=>{
+
+questions.push(d.data());
+
+});
+
+}
+
+
+
+window.loginStudent=function(){
+
+const i=document.getElementById("loginStudent").value;
+
+const pass=document.getElementById("loginPass").value;
+
+const s=students[i];
+
+if(s.password!==pass){
+
+alert("パスワード違い");
+
+return;
+
+}
+
+loginIndex=i;
+
+document.getElementById("studentArea").classList.remove("hidden");
+
+document.getElementById("welcome").textContent=s.name+"のページ";
+
+}
+
+
+
+window.startTest=function(){
+
+const area=document.getElementById("testArea");
+
+area.innerHTML="";
+
+questions.forEach((q,i)=>{
+
+area.innerHTML+=`
+
+<p>${q.question}</p>
+
+<input id="ans_${i}">
+
+`;
+
+});
+
+area.innerHTML+=`<button onclick="grade()">採点</button>`;
+
+}
+
+
+
+window.grade=async function(){
+
+let correct=0;
+
+questions.forEach((q,i)=>{
+
+const user=document.getElementById("ans_"+i).value.toLowerCase();
+
+if(q.answers.includes(user))correct++;
+
+});
+
+const score=Math.round(correct/questions.length*100);
+
+const student=students[loginIndex];
+
+student.scores["test"]=score;
+
+await updateDoc(doc(db,"students",student.id),{
+
+scores:student.scores
+
+});
+
+document.getElementById("myScore").textContent=score;
+
+}
+
+
+
+loadStudents();
+
+loadQuestions();
+
+</script>
+
+</body>
+</html>
