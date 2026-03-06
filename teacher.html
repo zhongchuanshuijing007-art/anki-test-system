@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>先生ページ</title>
+
+<style>
+
+body{
+font-family:sans-serif;
+padding:10px;
+}
+
+input,button{
+padding:10px;
+font-size:16px;
+margin:4px 0;
+width:100%;
+max-width:300px;
+}
+
+table{
+width:100%;
+}
+
+.hidden{
+display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>先生ページ</h1>
+
+<h2>単元設定</h2>
+
+<input id="unitName" placeholder="単元名">
+
+<button onclick="setUnit()">単元設定</button>
+
+<p>現在：<span id="currentUnit">未設定</span></p>
+
+
+<h2>問題追加</h2>
+
+<input id="questionText" placeholder="問題">
+
+<input id="answerText" placeholder="正解（カンマ区切り）">
+
+<button onclick="addQuestion()">問題追加</button>
+
+
+<h2>問題一覧</h2>
+
+<ul id="questionList"></ul>
+
+
+<h2>生徒追加</h2>
+
+<input id="studentName" placeholder="名前">
+
+<input id="studentPass" placeholder="パスワード">
+
+<button onclick="addStudent()">追加</button>
+
+
+<h2>生徒一覧</h2>
+
+<table border="1">
+
+<thead>
+
+<tr>
+<th>名前</th>
+<th>点数</th>
+<th>削除</th>
+</tr>
+
+</thead>
+
+<tbody id="studentTable"></tbody>
+
+</table>
+
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+doc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+
+const firebaseConfig = {
+
+apiKey: "YOUR_API_KEY",
+
+authDomain: "YOUR_PROJECT.firebaseapp.com",
+
+projectId: "YOUR_PROJECT",
+
+storageBucket: "YOUR_PROJECT.appspot.com",
+
+messagingSenderId: "XXXX",
+
+appId: "XXXX"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+let students=[];
+
+let questions={};
+
+let currentUnit="";
+
+
+function normalize(text){
+
+return text.trim().toLowerCase();
+
+}
+
+
+window.setUnit=function(){
+
+currentUnit=document.getElementById("unitName").value;
+
+document.getElementById("currentUnit").textContent=currentUnit;
+
+renderQuestions();
+
+renderTable();
+
+}
+
+
+
+window.addStudent=async function(){
+
+const name=document.getElementById("studentName").value;
+
+const pass=document.getElementById("studentPass").value;
+
+if(!name||!pass)return;
+
+await addDoc(collection(db,"students"),{
+
+name:name,
+
+password:pass,
+
+scores:{}
+
+});
+
+loadStudents();
+
+}
+
+
+
+async function loadStudents(){
+
+students=[];
+
+const snap=await getDocs(collection(db,"students"));
+
+snap.forEach(d=>{
+
+students.push({
+
+id:d.id,
+
+...d.data()
+
+});
+
+});
+
+renderTable();
+
+}
+
+
+
+function renderTable(){
+
+const tbody=document.getElementById("studentTable");
+
+tbody.innerHTML="";
+
+students.forEach((s,i)=>{
+
+const score=currentUnit&&s.scores[currentUnit]!==undefined
+
+?s.scores[currentUnit]
+
+:"";
+
+tbody.innerHTML+=`
+
+<tr>
+
+<td>${s.name}</td>
+
+<td>${score}</td>
+
+<td><button onclick="deleteStudent(${i})">削除</button></td>
+
+</tr>
+
+`;
+
+});
+
+}
+
+
+
+window.deleteStudent=async function(i){
+
+await deleteDoc(doc(db,"students",students[i].id));
+
+loadStudents();
+
+}
+
+
+
+window.addQuestion=async function(){
+
+const q=document.getElementById("questionText").value;
+
+const raw=document.getElementById("answerText").value;
+
+if(!q||!raw)return;
+
+const answers=raw.split(",").map(a=>normalize(a));
+
+await addDoc(collection(db,"questions"),{
+
+unit:currentUnit,
+
+question:q,
+
+answers:answers
+
+});
+
+loadQuestions();
+
+}
+
+
+
+async function loadQuestions(){
+
+questions={};
+
+const snap=await getDocs(collection(db,"questions"));
+
+snap.forEach(d=>{
+
+const data=d.data();
+
+if(!questions[data.unit])questions[data.unit]=[];
+
+questions[data.unit].push(data);
+
+});
+
+renderQuestions();
+
+}
+
+
+
+function renderQuestions(){
+
+const list=document.getElementById("questionList");
+
+list.innerHTML="";
+
+if(!questions[currentUnit])return;
+
+questions[currentUnit].forEach(q=>{
+
+const li=document.createElement("li");
+
+li.textContent=q.question+" → "+q.answers.join("/");
+
+list.appendChild(li);
+
+});
+
+}
+
+
+
+loadStudents();
+
+loadQuestions();
+
+</script>
+
+</body>
+</html>
