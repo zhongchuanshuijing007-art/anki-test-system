@@ -45,10 +45,17 @@ display:none;
 
 <h2 id="welcome"></h2>
 
+
+<h3>科目選択</h3>
+<select id="subjectSelect"></select>
+
+<h3>単元選択</h3>
+<select id="unitSelect"></select>
+
 <button onclick="startTest()">テスト開始</button>
 
-<h3>結果</h3>
 
+<h3>結果</h3>
 <p id="score"></p>
 
 <div id="testArea"></div>
@@ -72,12 +79,14 @@ doc
 /* Firebase設定 */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDyxNXxTiEsqsyBc6yWk2SOE7-sXklWlEw",
-  authDomain: "anki-test-system.firebaseapp.com",
-  projectId: "anki-test-system",
-  storageBucket: "anki-test-system.firebasestorage.app",
-  messagingSenderId: "1084360201224",
-  appId: "1:1084360201224:web:b447d41ded709f15012dbd"
+
+apiKey:"YOUR_API_KEY",
+authDomain:"YOUR_DOMAIN",
+projectId:"YOUR_PROJECT",
+storageBucket:"YOUR_BUCKET",
+messagingSenderId:"XXXX",
+appId:"XXXX"
+
 };
 
 const app = initializeApp(firebaseConfig);
@@ -88,10 +97,11 @@ const db = getFirestore(app);
 
 let students=[];
 let questions=[];
+let testQuestions=[];
 let loginIndex=null;
 
 
-/* 正規化（ゆるい判定） */
+/* 正規化 */
 
 function normalize(text){
 
@@ -116,10 +126,8 @@ const snap = await getDocs(collection(db,"students"));
 snap.forEach(d=>{
 
 students.push({
-
 id:d.id,
 ...d.data()
-
 });
 
 });
@@ -156,7 +164,71 @@ questions.push(d.data());
 
 });
 
+loadSubjects();
+loadUnits();
+
 }
+
+
+/* 科目読み込み */
+
+function loadSubjects(){
+
+const subjects=[...new Set(questions.map(q=>q.subject))];
+
+const select=document.getElementById("subjectSelect");
+
+select.innerHTML="";
+
+subjects.forEach(s=>{
+
+const op=document.createElement("option");
+
+op.value=s;
+op.textContent=s;
+
+select.appendChild(op);
+
+});
+
+}
+
+
+/* 単元読み込み */
+
+function loadUnits(){
+
+const subject=document.getElementById("subjectSelect").value;
+
+const units=[...new Set(
+
+questions
+.filter(q=>q.subject===subject)
+.map(q=>q.unit)
+
+)];
+
+const select=document.getElementById("unitSelect");
+
+select.innerHTML="";
+
+units.forEach(u=>{
+
+const op=document.createElement("option");
+
+op.value=u;
+op.textContent=u;
+
+select.appendChild(op);
+
+});
+
+}
+
+
+document
+.getElementById("subjectSelect")
+.addEventListener("change",loadUnits);
 
 
 /* ログイン */
@@ -164,7 +236,6 @@ questions.push(d.data());
 window.login=function(){
 
 const i=parseInt(document.getElementById("studentSelect").value);
-
 const pass=document.getElementById("studentPass").value;
 
 if(students[i].password!==pass){
@@ -188,11 +259,21 @@ students[i].name+" さん";
 
 window.startTest=function(){
 
+const subject=document.getElementById("subjectSelect").value;
+const unit=document.getElementById("unitSelect").value;
+
+testQuestions=questions.filter(q=>
+
+q.subject===subject &&
+q.unit===unit
+
+);
+
 const area=document.getElementById("testArea");
 
 area.innerHTML="";
 
-questions.forEach((q,i)=>{
+testQuestions.forEach((q,i)=>{
 
 area.innerHTML+=`
 
@@ -215,7 +296,7 @@ window.grade=async function(){
 
 let correct=0;
 
-questions.forEach((q,i)=>{
+testQuestions.forEach((q,i)=>{
 
 const user=normalize(
 document.getElementById("ans_"+i).value
@@ -231,17 +312,18 @@ if(ok)correct++;
 
 });
 
-const score = questions.length
-?Math.round(correct/questions.length*100)
+const score=testQuestions.length
+?Math.round(correct/testQuestions.length*100)
 :0;
 
-document.getElementById("score").textContent =
-score+"点";
+document.getElementById("score").textContent=score+"点";
 
 
 /* Firestore保存 */
 
 const student=students[loginIndex];
+
+if(!student.scores) student.scores={};
 
 student.scores["test"]=score;
 
