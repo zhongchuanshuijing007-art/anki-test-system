@@ -40,6 +40,7 @@ display:none;
 
 <button onclick="login()">ログイン</button>
 
+
 <div id="studentArea" class="hidden">
 
 <h2 id="welcome"></h2>
@@ -68,27 +69,35 @@ doc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 
+/* Firebase設定 */
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDyxNXxTiEsqsyBc6yWk2SOE7-sXklWlEw",
-  authDomain: "anki-test-system.firebaseapp.com",
-  projectId: "anki-test-system",
-  storageBucket: "anki-test-system.firebasestorage.app",
-  messagingSenderId: "1084360201224",
-  appId: "1:1084360201224:web:b447d41ded709f15012dbd"
+
+apiKey:"YOUR_API_KEY",
+authDomain:"YOUR_DOMAIN",
+projectId:"YOUR_PROJECT",
+storageBucket:"YOUR_BUCKET",
+messagingSenderId:"XXXX",
+appId:"XXXX"
+
 };
 
-const app=initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-const db=getFirestore(app);
+
+/* データ */
 
 let students=[];
 let questions=[];
 let loginIndex=null;
 
+
+/* 正規化（ゆるい判定） */
+
 function normalize(text){
 
 return (text||"")
-
 .toLowerCase()
 .trim()
 .replace(/[　\s]/g,"")
@@ -97,11 +106,14 @@ return (text||"")
 
 }
 
+
 /* 生徒読み込み */
 
 async function loadStudents(){
 
-const snap=await getDocs(collection(db,"students"));
+students=[];
+
+const snap = await getDocs(collection(db,"students"));
 
 snap.forEach(d=>{
 
@@ -116,6 +128,8 @@ id:d.id,
 
 const select=document.getElementById("studentSelect");
 
+select.innerHTML="";
+
 students.forEach((s,i)=>{
 
 const op=document.createElement("option");
@@ -129,11 +143,14 @@ select.appendChild(op);
 
 }
 
-/* 問題 */
+
+/* 問題読み込み */
 
 async function loadQuestions(){
 
-const snap=await getDocs(collection(db,"questions"));
+questions=[];
+
+const snap = await getDocs(collection(db,"questions"));
 
 snap.forEach(d=>{
 
@@ -143,11 +160,13 @@ questions.push(d.data());
 
 }
 
+
 /* ログイン */
 
 window.login=function(){
 
-const i=document.getElementById("studentSelect").value;
+const i=parseInt(document.getElementById("studentSelect").value);
+
 const pass=document.getElementById("studentPass").value;
 
 if(students[i].password!==pass){
@@ -161,11 +180,13 @@ loginIndex=i;
 
 document.getElementById("studentArea").classList.remove("hidden");
 
-document.getElementById("welcome").textContent=students[i].name;
+document.getElementById("welcome").textContent=
+students[i].name+" さん";
 
 }
 
-/* テスト */
+
+/* テスト開始 */
 
 window.startTest=function(){
 
@@ -189,6 +210,7 @@ area.innerHTML+=`<button onclick="grade()">採点</button>`;
 
 }
 
+
 /* 採点 */
 
 window.grade=async function(){
@@ -197,11 +219,13 @@ let correct=0;
 
 questions.forEach((q,i)=>{
 
-const user=normalize(document.getElementById("ans_"+i).value);
+const user=normalize(
+document.getElementById("ans_"+i).value
+);
 
 const ok=q.answers.some(ans=>
 
-user.includes(ans)||ans.includes(user)
+user.includes(ans) || ans.includes(user)
 
 );
 
@@ -209,9 +233,15 @@ if(ok)correct++;
 
 });
 
-const score=Math.round(correct/questions.length*100);
+const score = questions.length
+?Math.round(correct/questions.length*100)
+:0;
 
-document.getElementById("score").textContent=score+"点";
+document.getElementById("score").textContent =
+score+"点";
+
+
+/* Firestore保存 */
 
 const student=students[loginIndex];
 
@@ -224,6 +254,9 @@ scores:student.scores
 });
 
 }
+
+
+/* 初期読み込み */
 
 loadStudents();
 loadQuestions();
