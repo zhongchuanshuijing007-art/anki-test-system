@@ -230,9 +230,9 @@ tbody.innerHTML="";
 
 students.forEach((s,i)=>{
 
-const score=currentUnit&&s.scores?.[currentUnit]!==undefined
-?s.scores[currentUnit]
-:"";
+const score=currentSubject && s.scores?.[currentSubject]!==undefined
+? s.scores[currentSubject]
+: "";
 
 tbody.innerHTML+=`
 
@@ -268,9 +268,9 @@ const unit=document.getElementById("unit").value;
 const q=document.getElementById("questionText").value;
 const raw=document.getElementById("answerText").value;
 
-if(!subject||!q||!raw||!currentUnit)return;
+if(!currentSubject||!unit||!q||!raw)return;
 
-const answers=raw.split(",").map(a=>normalize(a));
+const answers=raw.split(",").map(a=>a.trim());
 
 await addDoc(collection(db,"questions"),{
 
