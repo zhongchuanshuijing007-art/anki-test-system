@@ -58,8 +58,9 @@ display:none;
 
 <p>現在：<span id="currentUnit">未設定</span></p>
 
-
 <h2>問題追加</h2>
+
+<input id="subject" placeholder="科目（社会など）">
 
 <input id="questionText" placeholder="問題">
 
@@ -116,16 +117,16 @@ doc
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDyxNXxTiEsqsyBc6yWk2SOE7-sXklWlEw",
-  authDomain: "anki-test-system.firebaseapp.com",
-  projectId: "anki-test-system",
-  storageBucket: "anki-test-system.firebasestorage.app",
-  messagingSenderId: "1084360201224",
-  appId: "1:1084360201224:web:b447d41ded709f15012dbd"
+apiKey:"APIKEY",
+authDomain:"PROJECT.firebaseapp.com",
+projectId:"PROJECT",
+storageBucket:"PROJECT.appspot.com",
+messagingSenderId:"XXXX",
+appId:"XXXX"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
 
 let students=[];
@@ -134,7 +135,12 @@ let currentUnit="";
 
 
 function normalize(text){
-return text.trim().toLowerCase();
+
+return text
+.toLowerCase()
+.replace(/[ぁ-ん]/g,s=>String.fromCharCode(s.charCodeAt(0)+0x60))
+.trim();
+
 }
 
 
@@ -225,7 +231,7 @@ tbody.innerHTML="";
 
 students.forEach((s,i)=>{
 
-const score=currentUnit&&s.scores[currentUnit]!==undefined
+const score=currentUnit&&s.scores?.[currentUnit]!==undefined
 ?s.scores[currentUnit]
 :"";
 
@@ -259,16 +265,17 @@ loadStudents();
 
 window.addQuestion=async function(){
 
+const subject=document.getElementById("subject").value;
 const q=document.getElementById("questionText").value;
-
 const raw=document.getElementById("answerText").value;
 
-if(!q||!raw)return;
+if(!subject||!q||!raw||!currentUnit)return;
 
 const answers=raw.split(",").map(a=>normalize(a));
 
 await addDoc(collection(db,"questions"),{
 
+subject:subject,
 unit:currentUnit,
 question:q,
 answers:answers
@@ -312,7 +319,7 @@ list.innerHTML="";
 
 questions
 .filter(q=>q.unit===currentUnit)
-.forEach((q,i)=>{
+.forEach(q=>{
 
 const li=document.createElement("li");
 
@@ -320,8 +327,10 @@ li.innerHTML=
 
 `${q.question}
 <br>正解: ${q.answers.join("/")}
+
 <br>
 <button onclick="deleteQuestion('${q.id}')">削除</button>
+
 <hr>
 `;
 
