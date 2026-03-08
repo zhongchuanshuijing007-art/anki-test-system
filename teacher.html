@@ -138,7 +138,6 @@ function normalize(text){
 
 return text
 .toLowerCase()
-.replace(/[ぁ-ん]/g,s=>String.fromCharCode(s.charCodeAt(0)+0x60))
 .trim();
 
 }
