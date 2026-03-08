@@ -35,6 +35,7 @@ display:none;
 </head>
 
 <body>
+
 <h1>先生ページ</h1>
 
 <div id="loginArea">
@@ -48,8 +49,6 @@ display:none;
 </div>
 
 <div id="teacherArea" class="hidden">
-
-<h1>先生ページ</h1>
 
 <h2>単元設定</h2>
 
@@ -67,6 +66,7 @@ display:none;
 <input id="answerText" placeholder="正解（カンマ区切り）">
 
 <button onclick="addQuestion()">問題追加</button>
+
 
 <h2>問題一覧</h2>
 
@@ -87,18 +87,18 @@ display:none;
 <table border="1">
 
 <thead>
-
 <tr>
 <th>名前</th>
 <th>点数</th>
 <th>削除</th>
 </tr>
-
 </thead>
 
 <tbody id="studentTable"></tbody>
 
 </table>
+
+</div>
 
 
 <script type="module">
@@ -116,28 +116,46 @@ doc
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDyxNXxTiEsqsyBc6yWk2SOE7-sXklWlEw",
-  authDomain: "anki-test-system.firebaseapp.com",
-  projectId: "anki-test-system",
-  storageBucket: "anki-test-system.firebasestorage.app",
-  messagingSenderId: "1084360201224",
-  appId: "1:1084360201224:web:b447d41ded709f15012dbd"
+  apiKey: "APIKEY",
+  authDomain: "PROJECT.firebaseapp.com",
+  projectId: "PROJECT",
+  storageBucket: "PROJECT.appspot.com",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
 };
 
 const app = initializeApp(firebaseConfig);
-
 const db = getFirestore(app);
 
+
 let students=[];
-
-let questions={};
-
+let questions=[];
 let currentUnit="";
 
 
 function normalize(text){
-
 return text.trim().toLowerCase();
+}
+
+
+window.teacherLogin=function(){
+
+const pass=document.getElementById("teacherPass").value;
+
+if(pass==="008769"){
+
+document.getElementById("loginArea").style.display="none";
+
+document.getElementById("teacherArea").classList.remove("hidden");
+
+loadStudents();
+loadQuestions();
+
+}else{
+
+alert("パスワードが違います");
+
+}
 
 }
 
@@ -148,9 +166,8 @@ currentUnit=document.getElementById("unitName").value;
 
 document.getElementById("currentUnit").textContent=currentUnit;
 
-renderQuestions();
-
 renderTable();
+renderQuestions();
 
 }
 
@@ -159,7 +176,6 @@ renderTable();
 window.addStudent=async function(){
 
 const name=document.getElementById("studentName").value;
-
 const pass=document.getElementById("studentPass").value;
 
 if(!name||!pass)return;
@@ -167,9 +183,7 @@ if(!name||!pass)return;
 await addDoc(collection(db,"students"),{
 
 name:name,
-
 password:pass,
-
 scores:{}
 
 });
@@ -191,7 +205,6 @@ snap.forEach(d=>{
 students.push({
 
 id:d.id,
-
 ...d.data()
 
 });
@@ -213,9 +226,7 @@ tbody.innerHTML="";
 students.forEach((s,i)=>{
 
 const score=currentUnit&&s.scores[currentUnit]!==undefined
-
 ?s.scores[currentUnit]
-
 :"";
 
 tbody.innerHTML+=`
@@ -223,9 +234,7 @@ tbody.innerHTML+=`
 <tr>
 
 <td>${s.name}</td>
-
 <td>${score}</td>
-
 <td><button onclick="deleteStudent(${i})">削除</button></td>
 
 </tr>
@@ -261,9 +270,7 @@ const answers=raw.split(",").map(a=>normalize(a));
 await addDoc(collection(db,"questions"),{
 
 unit:currentUnit,
-
 question:q,
-
 answers:answers
 
 });
@@ -276,17 +283,18 @@ loadQuestions();
 
 async function loadQuestions(){
 
-questions={};
+questions=[];
 
 const snap=await getDocs(collection(db,"questions"));
 
 snap.forEach(d=>{
 
-const data=d.data();
+questions.push({
 
-if(!questions[data.unit])questions[data.unit]=[];
+id:d.id,
+...d.data()
 
-questions[data.unit].push(data);
+});
 
 });
 
@@ -302,13 +310,20 @@ const list=document.getElementById("questionList");
 
 list.innerHTML="";
 
-if(!questions[currentUnit])return;
-
-questions[currentUnit].forEach(q=>{
+questions
+.filter(q=>q.unit===currentUnit)
+.forEach((q,i)=>{
 
 const li=document.createElement("li");
 
-li.textContent=q.question+" → "+q.answers.join("/");
+li.innerHTML=
+
+`${q.question}
+<br>正解: ${q.answers.join("/")}
+<br>
+<button onclick="deleteQuestion('${q.id}')">削除</button>
+<hr>
+`;
 
 list.appendChild(li);
 
@@ -318,30 +333,19 @@ list.appendChild(li);
 
 
 
-loadStudents();
+window.deleteQuestion=async function(id){
+
+if(confirm("この問題を削除しますか？")){
+
+await deleteDoc(doc(db,"questions",id));
 
 loadQuestions();
 
-window.teacherLogin=function(){
-
-const pass=document.getElementById("teacherPass").value;
-
-if(pass==="008769"){
-
-document.getElementById("loginArea").style.display="none";
-
-document.getElementById("teacherArea").classList.remove("hidden");
-
-}else{
-
-alert("パスワードが違います");
-
 }
 
 }
+
 </script>
-
-</div>
 
 </body>
 </html>
