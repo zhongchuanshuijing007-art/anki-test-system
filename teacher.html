@@ -50,17 +50,17 @@ display:none;
 
 <div id="teacherArea" class="hidden">
 
-<h2>単元設定</h2>
+<h2>科目設定</h2>
 
-<input id="unitName" placeholder="単元名">
+<input id="subjectName" placeholder="科目名（社会など）">
 
-<button onclick="setUnit()">単元設定</button>
+<button onclick="setSubject()">科目設定</button>
 
-<p>現在：<span id="currentUnit">未設定</span></p>
+<p>現在：<span id="currentSubject">未設定</span></p>
 
 <h2>問題追加</h2>
 
-<input id="subject" placeholder="科目（社会など）">
+<input id="unit" placeholder="単元（江戸時代など）">
 
 <input id="questionText" placeholder="問題">
 
@@ -117,12 +117,12 @@ doc
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDyxNXxTiEsqsyBc6yWk2SOE7-sXklWlEw",
-  authDomain: "anki-test-system.firebaseapp.com",
-  projectId: "anki-test-system",
-  storageBucket: "anki-test-system.firebasestorage.app",
-  messagingSenderId: "1084360201224",
-  appId: "1:1084360201224:web:b447d41ded709f15012dbd"
+apiKey:"APIKEY",
+authDomain:"PROJECT.firebaseapp.com",
+projectId:"PROJECT",
+storageBucket:"PROJECT.appspot.com",
+messagingSenderId:"XXXX",
+appId:"XXXX"
 };
 
 const app=initializeApp(firebaseConfig);
@@ -131,7 +131,7 @@ const db=getFirestore(app);
 
 let students=[];
 let questions=[];
-let currentUnit="";
+let currentSubject="";
 
 
 function normalize(text){
@@ -165,11 +165,11 @@ alert("パスワードが違います");
 }
 
 
-window.setUnit=function(){
+window.setSubject=function(){
 
-currentUnit=document.getElementById("unitName").value;
+currentSubject=document.getElementById("subjectName").value;
 
-document.getElementById("currentUnit").textContent=currentUnit;
+document.getElementById("currentSubject").textContent=currentSubject;
 
 renderTable();
 renderQuestions();
@@ -264,7 +264,7 @@ loadStudents();
 
 window.addQuestion=async function(){
 
-const subject=document.getElementById("subject").value;
+const unit=document.getElementById("unit").value;
 const q=document.getElementById("questionText").value;
 const raw=document.getElementById("answerText").value;
 
@@ -274,8 +274,8 @@ const answers=raw.split(",").map(a=>normalize(a));
 
 await addDoc(collection(db,"questions"),{
 
-subject:subject,
-unit:currentUnit,
+subject:currentSubject,
+unit:unit,
 question:q,
 answers:answers
 
@@ -317,7 +317,7 @@ const list=document.getElementById("questionList");
 list.innerHTML="";
 
 questions
-.filter(q=>q.unit===currentUnit)
+.filter(q=>q.subject===currentSubject)
 .forEach(q=>{
 
 const li=document.createElement("li");
