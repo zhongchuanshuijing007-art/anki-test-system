@@ -108,7 +108,10 @@ return (text||"")
 .trim()
 .replace(/[　\s]/g,"")
 .replace(/[。、,.]/g,"")
-.replace(/です|だ|である/g,"");
+.replace(/です|だ|である/g,"")
+.replace(/[ァ-ン]/g, s =>
+String.fromCharCode(s.charCodeAt(0)-0x60)
+);
 
 }
 
