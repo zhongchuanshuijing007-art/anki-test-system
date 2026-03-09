@@ -297,19 +297,32 @@ window.grade=async function(){
 
 let correct=0;
 
+const area=document.getElementById("testArea");
+
+area.innerHTML="";
+
 testQuestions.forEach((q,i)=>{
 
-const user=normalize(
-document.getElementById("ans_"+i).value
-);
+const userInput=document.getElementById("ans_"+i).value;
+
+const user=normalize(userInput);
 
 const ok=q.answers.some(ans=>
-
-user.includes(ans) || ans.includes(user)
-
+user.includes(normalize(ans)) || normalize(ans).includes(user)
 );
 
-if(ok)correct++;
+if(ok) correct++;
+
+area.innerHTML+=`
+
+<p>${q.question}</p>
+<p>あなたの答え：${userInput}</p>
+<p>${ok ? "⭕ 正解" : "❌ 不正解"}</p>
+<p>正解：${q.answers.join(" / ")}</p>
+
+<hr>
+
+`;
 
 });
 
@@ -318,7 +331,6 @@ const score=testQuestions.length
 :0;
 
 document.getElementById("score").textContent=score+"点";
-
 
 /* Firestore保存 */
 
@@ -329,9 +341,7 @@ if(!student.scores) student.scores={};
 student.scores["test"]=score;
 
 await updateDoc(doc(db,"students",student.id),{
-
 scores:student.scores
-
 });
 
 }
